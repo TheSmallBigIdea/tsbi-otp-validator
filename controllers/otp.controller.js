@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { sendOtpEmail } = require('../services/email');
 
 const OTP_EXPIRY_MINUTES = 5;
-const MASTER_OTP = 2947805
+const MASTER_OTP = process.env.MASTER_OTP
 
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
