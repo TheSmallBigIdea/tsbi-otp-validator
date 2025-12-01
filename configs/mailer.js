@@ -1,32 +1,51 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com',
+/* ---------------- PRIMARY: OUTLOOK ---------------- */
+const outlookConfig = {
+    host: "smtp.office365.com",
     port: 587,
-    secure: false, // STARTTLS
+    secure: false,
     auth: {
-        user: 'tech@tsbi.in',
-        pass: process.env.SMTP_APP_PASS, // App Password
+        user: "tech@tsbi.in",
+        pass: process.env.OUTLOOK_APP_PASS,
     },
     tls: {
-        rejectUnauthorized: false, // avoids TLS handshake error
-        minVersion: 'TLSv1.2',     // modern TLS required by Outlook
+        rejectUnauthorized: false,
+        minVersion: "TLSv1.2",
     },
-});
+};
 
-// Verify connection
+/* ---------------- FALLBACK: GMAIL ---------------- */
+const gmailConfig = {
+    service: "gmail",
+    auth: {
+        user: "thesmallbigidea1@gmail.com",
+        pass: process.env.GMAIL_APP_PASS,
+    },
+};
+
+let transporter = nodemailer.createTransport(outlookConfig);
+
+/* ------------ AUTO-SELECT WORKING TRANSPORTER ------------- */
 (async () => {
     try {
         await transporter.verify();
-        console.log('SMTP connected successfully');
+        console.log("✅ Using OUTLOOK SMTP");
     } catch (err) {
-        console.error('SMTP verify failed:', {
-            code: err.code,
-            responseCode: err.responseCode,
-            command: err.command,
-            response: err.response,
-        });
+        console.error("❌ Outlook failed, switching to Gmail:", err.response || err);
+
+        transporter = nodemailer.createTransport(gmailConfig);
+
+        try {
+            await transporter.verify();
+            console.log("✅ Using GMAIL SMTP (fallback)");
+        } catch (gmailErr) {
+            console.error("❌ Gmail also failed!", gmailErr.response || gmailErr);
+        }
     }
 })();
+
+
+
 
 module.exports = transporter;
